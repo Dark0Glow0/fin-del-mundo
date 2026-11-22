@@ -56,7 +56,6 @@ canvas {
 }
 
 .vida-nombre {
-  font-weight: 700;
   font-size: 11px;
   font-family: 'Press Start 2P', monospace;
 }
@@ -118,9 +117,9 @@ canvas {
 
 .btn-ataque {
   padding: 12px;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: clamp(11px, 1.1vw, 15px);
   font-family: 'Press Start 2P', monospace;
+  line-height: 1.4;
   color: #fff;
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.25);
@@ -210,8 +209,6 @@ canvas {
   font-size: 14px;
   margin-top: 12px;
   padding: 14px 40px;
-  font-size: 18px;
-  font-weight: 700;
   color: #1a1a2e;
   background: #facc15;
   border: none;
