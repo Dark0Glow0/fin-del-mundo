@@ -79,6 +79,7 @@ function atacar(lado, idAtaque, mensajes) {
         vida: defensor.vidaActual,
         vidaMax: defensor.vida,
         tipoAtaque: ataque.tipo,
+        idAtaque: idAtaque,
         critico: resultado.critico,
     });
 

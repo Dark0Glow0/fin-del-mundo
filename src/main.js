@@ -1,37 +1,13 @@
 import './style.css';
 import * as THREE from 'three';
 import { ATAQUES, CRIATURAS, multiplicador } from './datos.js';
-import { calcularDanio, crearLuchador, estado, luchadorActivo, jugarTurno, elegirAtaqueRival } from './combate.js';
+import { crearLuchador, estado, luchadorActivo, jugarTurno, elegirAtaqueRival } from './combate.js';
 import { equipoDelDia, semillaDeHoy } from './diario.js';
+import { iniciarAudio, sonidoLetra, sonidoGolpe, sonidoCritico, sonidoFallo, sonidoDebilitado, sonidoEntrada, sonidoPublico, sonidoVictoria, sonidoDerrota, iniciarAmbiente, detenerAmbiente, sonidoAtaque  } from './sonido.js';
 
 const criaturasDeHoy = equipoDelDia(CRIATURAS, 3);
 estado.jugador.equipo = criaturasDeHoy.map(c => crearLuchador(c.id));
 estado.rival.equipo = [crearLuchador('puma'), crearLuchador('cherufe'), crearLuchador('foca')];
-
-console.log('Tú:', luchadorActivo('jugador').nombre, luchadorActivo('jugador').vidaActual);
-console.log('Lautaro:', luchadorActivo('rival').nombre, luchadorActivo('rival').vidaActual);
-
-/*
-///prueba sistema de tipos
-console.log('Mar contra Volcán:', multiplicador('mar', 'volcan'));        
-console.log('Volcán contra Mar:', multiplicador('volcan', 'mar'));        
-console.log('Volcán contra Desierto:', multiplicador('volcan', 'desierto'));
-
-///info de las criaturas
-CRIATURAS.forEach((c) => {
-  const total = c.vida + c.ataque + c.defensa + c.velocidad;
-  console.log(c.nombre, total);
-});
-
-///prueba sistema de combate
-const hummble = CRIATURAS.find(c => c.id === 'pinguino');
-const cherufe = CRIATURAS.find(c => c.id === 'cherufe');
-
-console.log('Marejada contra Cherufe:', calcularDanio(hummble, cherufe, 'marejada'));
-console.log('Erupción contra Hummble:', calcularDanio(cherufe, hummble, 'erupcion'));
-
-///consulta de la versión de three.js
-console.log('three.js versión', THREE.REVISION);*/
 
 // 1. La escena: el mundo donde van los objetos
 const scene = new THREE.Scene();
@@ -95,6 +71,15 @@ window.addEventListener('resize', function () {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+// el audio se enciende con el primer clic en cualquier parte (los navegadores lo exigen)
+document.addEventListener('pointerdown', function(){
+  iniciarAudio();
+
+  // si hay un combate en curso, vuelve a sonar el murmullo del estadio
+  const hudVisible = document.getElementById('hud').classList.contains('oculta') === false;
+  if(hudVisible && estado.terminado === false) iniciarAmbiente();
 });
 
 // ---------- ESTADIO ----------
@@ -168,6 +153,7 @@ const DURACION_ANIMO = { ola: 2, triste: 1.6, loco: 2.5 };
 function reaccionPublico(animo) {
   animoPublico = animo;
   inicioAnimo = tiempoJuego;
+  sonidoPublico(animo);
 }
 
 // Loop de animación: como el Update() de Unity
@@ -280,8 +266,11 @@ function actualizarInterfaz() {
 let animando = false;   // true mientras se muestran los mensajes del turno
 
 async function elegirAtaque(id) {
-  if (estado.terminado || animando) return;   // || significa "o": si cualquiera es true, no hace nada
+  if (estado.terminado || animando) 
+    return;
+
   animando = true;
+  iniciarAmbiente();   // si no estaba sonando el ambiente, lo inicia
   ocultarInfoAtaque();   // si estaba mostrando la info de un ataque, la oculta
 
   // desactiva los botones mientras se ve el turno
@@ -302,6 +291,7 @@ async function elegirAtaque(id) {
         const efecto = efectoDeAtaque(evento.tipoAtaque, evento.atacante, evento.golpeado);
         await esperar(400);
         actualizarBarra(evento.golpeado, evento.vida, evento.vidaMax);
+        sonidoAtaque(evento.idAtaque);
         await animarGolpe(evento.golpeado, evento.critico);
         if (evento.critico)
           reaccionPublico('loco');
@@ -358,6 +348,7 @@ async function escribir(texto) {
   for (let i = 0; i < texto.length; i++) {
     if (miNumero !== escrituraActual) return;   // empezó otra escritura: esta se detiene
     caja.textContent += texto[i];
+    sonidoLetra();
     await esperar(25);
   }
   await esperar(700);
@@ -424,9 +415,13 @@ async function animarGolpe(lado, critico) {
   let color = '#ffffff';
   let fuerza = 0.15;
   if (critico) {
+    sonidoCritico();
     color = '#ff2a2a';    // rojo intenso
     fuerza = 0.3;         // tiembla el doble
   }
+
+  if (!critico) 
+    sonidoGolpe();
 
   capsula.material.emissive.set(color);
 
@@ -443,6 +438,7 @@ async function animarGolpe(lado, critico) {
 
 // El debilitado se encoge hasta desaparecer
 async function animarDebilitado(lado) {
+  sonidoDebilitado();
   const capsula = capsulaDe(lado);
   for (let i = 1; i <= 20; i++) {
     const escala = 1 - i / 20;
@@ -453,6 +449,7 @@ async function animarDebilitado(lado) {
 
 // Entra una criatura: aparece con un "pop" (crece, rebota) y un destello que se apaga
 async function animarEntrada(lado) {
+  sonidoEntrada();
   const capsula = capsulaDe(lado);
   capsula.material.color.set(luchadorActivo(lado).color);
   actualizarPanel('vida-' + lado, luchadorActivo(lado));
@@ -493,6 +490,7 @@ function actualizarBarra(lado, vida, vidaMax) {
 
 // El que falló se tambalea, como mareado
 async function animarMareo(lado) {
+  sonidoFallo();
   const capsula = capsulaDe(lado);
   for (let c = 0; c < 45; c++) {
     capsula.rotation.z = Math.sin(c * 0.45) * 0.35;   // se inclina a un lado y al otro
@@ -646,7 +644,6 @@ async function efectoSube(efecto, golpeado) {
   for (let c = 1; c <= 15; c++) {
     ramas.forEach(function (r) {
       r.scale.y = c / 15;
-      r.position.y = -1 + 0.9 * r.scale.y;  // el cilindro crece desde su centro: se sube para que nazca del piso
     });
     await esperar(16);
   }
@@ -711,6 +708,7 @@ function mostrarPantalla(id) {
 
 // Empieza el combate: oculta las pantallas y muestra la interfaz
 function empezarCombate() {
+  iniciarAmbiente();
   guardarRegistro('en curso');
   estado.jugador.equipo = orden.map(id => crearLuchador(id));
   guardarPartida();
@@ -724,6 +722,7 @@ function empezarCombate() {
 }
 
 document.getElementById('btn-jugar').addEventListener('click', function () {
+  iniciarAudio();
   mostrarPantalla('pantalla-equipo');
   mostrarCartasEquipo();
 });
@@ -789,7 +788,7 @@ function continuarPartida(guardada) {
   document.getElementById('pantalla-inicio').classList.add('oculta');
   document.getElementById('hud').classList.remove('oculta');
   actualizarInterfaz();
-  escribir('¡El combate continúa! ¿Qué hará ' + luchadorActivo('jugador').nombre + '?');
+  escribir('¡El combate continúa! Haz clic para activar el sonido. ¿Qué hará ' + luchadorActivo('jugador').nombre + '?');
   animarEntrada('jugador');
   animarEntrada('rival');
 }
@@ -820,12 +819,18 @@ function tiempoHastaManana() {
 
 // Muestra la pantalla final según el resultado
 function mostrarFinal(resultado) {
+  detenerAmbiente();
   let titulo = '¡Lautaro ganó!';
   let texto = 'Tu equipo cayó en batalla. Vuelve mañana con un nuevo equipo e inténtalo otra vez.';
   if (resultado === 'jugador') {
+    sonidoVictoria();
     titulo = '¡Felicidades, derrotaste a Lautaro!';
     texto = 'Superaste el desafío de hoy. Vuelve mañana por uno nuevo.';
   }
+  if (resultado !== 'jugador') {
+    sonidoDerrota();
+  }
+
   document.getElementById('final-titulo').textContent = titulo;
   document.getElementById('final-texto').textContent = texto;
   document.getElementById('hud').classList.add('oculta');
