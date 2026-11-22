@@ -269,3 +269,15 @@ export function detenerMusica() {
     fuenteMusica.stop();
     fuenteMusica = null;   // ¿cómo dejas claro que ya no suena nada?
 }
+
+document.addEventListener('visibilitychange', () => {
+    if(!ctx)
+        return;
+
+    if(document.hidden){
+        ctx.suspend();
+    }
+    else{
+        ctx.resume();
+    }
+});
