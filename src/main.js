@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import { ATAQUES, CRIATURAS, multiplicador } from './datos.js';
 import { crearLuchador, estado, luchadorActivo, jugarTurno, elegirAtaqueRival } from './combate.js';
 import { equipoDelDia, semillaDeHoy } from './diario.js';
-import { iniciarAudio, sonidoLetra, sonidoGolpe, sonidoCritico, sonidoFallo, sonidoDebilitado, sonidoEntrada, sonidoPublico, sonidoVictoria, sonidoDerrota, iniciarAmbiente, detenerAmbiente, sonidoAtaque  } from './sonido.js';
+import { iniciarAudio, sonidoLetra, sonidoGolpe, sonidoCritico, sonidoFallo, sonidoDebilitado, sonidoEntrada, sonidoPublico, sonidoVictoria, sonidoDerrota, iniciarAmbiente, detenerAmbiente, sonidoAtaque, iniciarMusica, detenerMusica  } from './sonido.js';
 
 const criaturasDeHoy = equipoDelDia(CRIATURAS, 3);
 estado.jugador.equipo = criaturasDeHoy.map(c => crearLuchador(c.id));
@@ -79,7 +79,10 @@ document.addEventListener('pointerdown', function(){
 
   // si hay un combate en curso, vuelve a sonar el murmullo del estadio
   const hudVisible = document.getElementById('hud').classList.contains('oculta') === false;
-  if(hudVisible && estado.terminado === false) iniciarAmbiente();
+  if(hudVisible && estado.terminado === false) {
+    iniciarAmbiente();
+    iniciarMusica();
+  }
 });
 
 // ---------- ESTADIO ----------
@@ -271,6 +274,7 @@ async function elegirAtaque(id) {
 
   animando = true;
   iniciarAmbiente();   // si no estaba sonando el ambiente, lo inicia
+  iniciarMusica();
   ocultarInfoAtaque();   // si estaba mostrando la info de un ataque, la oculta
 
   // desactiva los botones mientras se ve el turno
@@ -441,10 +445,22 @@ async function animarDebilitado(lado) {
   sonidoDebilitado();
   const capsula = capsulaDe(lado);
   for (let i = 1; i <= 20; i++) {
-    const escala = 1 - i / 20;
+    const avance = i / 20;  // de 0 a 1, igual que en animarEntrada
+    const escala = 1 - avance;
     capsula.scale.set(escala, escala, escala);
+
+    // B: girar, cada vez más rápido
+    capsula.rotation.z += avance * 1.5;
+
+    // A: destello (¿se enciende o se apaga?)
+    const brillo = 0 + avance;
+    capsula.material.emissive.setRGB(brillo, brillo, brillo);
+
     await esperar(20);
   }
+  // dejar la cápsula limpia para la próxima criatura
+  capsula.rotation.z = 0;
+  capsula.material.emissive.set('#000000');
 }
 
 // Entra una criatura: aparece con un "pop" (crece, rebota) y un destello que se apaga
@@ -462,6 +478,8 @@ async function animarEntrada(lado) {
     if (avance > 0.8) escala = 1.2 - (avance - 0.8) / 0.2 * 0.2;
     capsula.scale.set(escala, escala, escala);
 
+    capsula.rotation.z = avance * Math.PI * 4;
+
     // destello blanco que se va apagando
     const brillo = 1 - avance;
     capsula.material.emissive.setRGB(brillo, brillo, brillo);
@@ -470,6 +488,7 @@ async function animarEntrada(lado) {
   }
 
   capsula.scale.set(1, 1, 1);
+  capsula.rotation.z = 0;
   capsula.material.emissive.set('#000000');
 }
 
@@ -709,6 +728,7 @@ function mostrarPantalla(id) {
 // Empieza el combate: oculta las pantallas y muestra la interfaz
 function empezarCombate() {
   iniciarAmbiente();
+  iniciarMusica();
   guardarRegistro('en curso');
   estado.jugador.equipo = orden.map(id => crearLuchador(id));
   guardarPartida();
@@ -820,6 +840,7 @@ function tiempoHastaManana() {
 // Muestra la pantalla final según el resultado
 function mostrarFinal(resultado) {
   detenerAmbiente();
+  detenerMusica();
   let titulo = '¡Lautaro ganó!';
   let texto = 'Tu equipo cayó en batalla. Vuelve mañana con un nuevo equipo e inténtalo otra vez.';
   if (resultado === 'jugador') {

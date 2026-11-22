@@ -18,6 +18,8 @@ const SONIDOS_ATAQUE = {
 };
 
 function reproducir(archivo, volumen) {
+    if (!ctx)
+        return;
     const audio = new Audio(import.meta.env.BASE_URL + 'sonidos/' + archivo);
     audio.volume = volumen;
     audio.play();
@@ -26,7 +28,7 @@ function reproducir(archivo, volumen) {
 export function sonidoAtaque(idAtaque) {
     const archivo = SONIDOS_ATAQUE[idAtaque];
 
-    if (archivo){
+    if (archivo) {
         reproducir(archivo, 0.6);
     }
 }
@@ -138,7 +140,7 @@ export function sonidoFallo() {
 }
 
 // criatura debilitada: una nota que cae
-export function sonidoDebilitado() { 
+export function sonidoDebilitado() {
     reproducir('retirada.mp3', 0.6);
 }
 
@@ -165,17 +167,14 @@ export function sonidoPublico(animo) {
 
 // victoria y derrota: melodías cortas
 export function sonidoVictoria() {
-    [523, 659, 784, 1047].forEach(function (nota, i) {
-        setTimeout(function () { barrido(nota, nota, 0.18, 'square', 0.15); }, i * 150);
-    });
+    reproducir('gano_jugador.mp3', 0.6);
 }
 export function sonidoDerrota() {
-    [392, 330, 262, 196].forEach(function (nota, i) {
-        setTimeout(function () { barrido(nota, nota, 0.25, 'triangle', 0.18); }, i * 220);
-    });
+    reproducir('abucheo.mp3', 0.6);
 }
 
 // ---------- MURMULLO DEL ESTADIO (sonido de fondo) ----------
+
 let ambiente = null;   // guarda el murmullo mientras suena
 const VOLUMEN_AMBIENTE = 0.12;   // volumen normal del murmullo
 
@@ -222,7 +221,8 @@ export function detenerAmbiente() {
 
 // Baja el murmullo un rato (mientras el público reacciona) y después lo vuelve a subir
 function bajarAmbiente(duracion) {
-    if (ambiente === null) return;
+    if (ambiente === null) 
+        return;
     const ahora = ctx.currentTime;
     const volumen = ambiente.vol.gain;
 
@@ -231,4 +231,41 @@ function bajarAmbiente(duracion) {
     volumen.linearRampToValueAtTime(0.01, ahora + 0.3);                      // baja rápido
     volumen.linearRampToValueAtTime(0.01, ahora + duracion);                 // se mantiene bajo
     volumen.linearRampToValueAtTime(VOLUMEN_AMBIENTE, ahora + duracion + 1); // vuelve suave en 1 s
+}
+
+// ---------- Musica de Fondo ----------
+
+let bufferMusica = null;   // la música cargada (se carga una sola vez)
+let fuenteMusica = null;   // lo que está sonando ahora
+
+async function cargarMusica() {
+    const respuesta = await fetch(import.meta.env.BASE_URL + 'sonidos/' + 'pelea.ogg');
+    const datos = await respuesta.arrayBuffer();
+    bufferMusica = await ctx.decodeAudioData(datos);
+}
+
+export async function iniciarMusica() {
+    if (!ctx) 
+        return; // el usuario aún no toca la página
+    if (fuenteMusica) 
+        return; // ya está sonando, no la dupliques
+    if (!bufferMusica) 
+        await cargarMusica();
+
+    fuenteMusica = ctx.createBufferSource();
+    fuenteMusica.buffer = bufferMusica;
+    fuenteMusica.loop = true;
+
+    const volumen = ctx.createGain();
+    volumen.gain.value = 0.35;
+    fuenteMusica.connect(volumen);
+    volumen.connect(ctx.destination);
+    fuenteMusica.start();
+}
+
+export function detenerMusica() {
+    if (!fuenteMusica) 
+        return;
+    fuenteMusica.stop();
+    fuenteMusica = null;   // ¿cómo dejas claro que ya no suena nada?
 }
