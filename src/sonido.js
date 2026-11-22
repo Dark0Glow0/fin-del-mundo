@@ -138,24 +138,24 @@ export function sonidoFallo() {
 }
 
 // criatura debilitada: una nota que cae
-export function sonidoDebilitado() { barrido(500, 60, 0.6, 'triangle', 0.25); }
+export function sonidoDebilitado() { 
+    reproducir('retirada.mp3', 0.6);
+}
 
 // entra una criatura: tres notas que suben
 export function sonidoEntrada() {
-    [523, 659, 784].forEach(function (nota, i) {
-        setTimeout(function () { barrido(nota, nota, 0.1, 'square', 0.12); }, i * 80);
-    });
+    reproducir('entrada.mp3', 0.6);
 }
 
 // el público: ruido que suena como una ovación (más fuerte si está loco)
 export function sonidoPublico(animo) {
     if (animo === 'ola') {
-        bajarAmbiente(1.5);
-        ovacion(1.5, 0.6);
+        bajarAmbiente(2.5);
+        reproducir('publico_ola_cortada.mp3', 0.5)
     }
     if (animo === 'loco') {
         bajarAmbiente(2.5);
-        ovacion(2.5, 0.5);
+        reproducir('publico_loco.mp3', 0.5);
     }
     if (animo === 'triste') {
         bajarAmbiente(2.5);
