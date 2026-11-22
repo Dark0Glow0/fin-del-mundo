@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>fin-del-mundo</title>
+</head>
+
+<body>
+  <div id="app"></div>
+  <div id="hud" class="oculta">
+    <!-- vida del rival -->
+    <div class="panel-vida" id="vida-rival">
+      <div class="vida-top">
+        <span class="vida-nombre"></span>
+        <span class="vida-tipo"></span>
+      </div>
+      <div class="barra">
+        <div class="barra-relleno"></div>
+      </div>
+      <div class="vida-num"></div>
+    </div>
+
+    <!-- tu vida -->
+    <div class="panel-vida" id="vida-jugador">
+      <div class="vida-top">
+        <span class="vida-nombre"></span>
+        <span class="vida-tipo"></span>
+      </div>
+      <div class="barra">
+        <div class="barra-relleno"></div>
+      </div>
+      <div class="vida-num"></div>
+    </div>
+
+    <!-- mensajes y ataques -->
+    <div id="panel-acciones">
+      <p id="mensaje"></p>
+      <div id="info-ataque" class="oculta"></div>
+      <div id="botones-ataque"></div>
+    </div>
+  </div>
+
+  <!-- Pantalla de inicio -->
+  <div id="pantalla-inicio" class="pantalla">
+    <div class="caja">
+      <h1 class="titulo">Fin del Mundo</h1>
+      <p class="subtitulo">Leyendas de Norte a Sur</p>
+      <p class="texto-pantalla">Desafío del día: derrota a Lautaro con el equipo que te toque.</p>
+      <button id="btn-jugar" class="btn-grande">Jugar</button>
+    </div>
+  </div>
+
+  <!-- Pantalla de equipo (el orden lo armamos en el paso 18) -->
+  <div id="pantalla-equipo" class="pantalla oculta">
+    <div class="caja">
+      <h2>Tu equipo de hoy</h2>
+      <p class="texto-pantalla">Elige el orden en que saldrán tus criaturas.</p>
+      <div id="cartas-equipo"></div>
+      <button id="btn-pelear" class="btn-grande" disabled>¡A pelear!</button>
+    </div>
+  </div>
+
+  <!-- Pantalla final -->
+  <div id="pantalla-final" class="pantalla oculta">
+    <div class="caja">
+      <h2 id="final-titulo"></h2>
+      <p id="final-texto" class="texto-pantalla"></p>
+      <p id="final-cuenta" class="texto-pantalla"></p>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
