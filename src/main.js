@@ -47,6 +47,7 @@ const forma = new THREE.CapsuleGeometry(0.5, 0.8, 8, 16);            // radio, l
 const material = new THREE.MeshStandardMaterial({ color: '#ff6b6b' });
 const criatura = new THREE.Mesh(forma, material);
 criatura.position.set(-2, 0, 0);
+criatura.scale.set(0, 0, 0);
 criatura.castShadow = true;
 scene.add(criatura);
 
@@ -55,6 +56,7 @@ const formaEnemiga = new THREE.CapsuleGeometry(0.5, 0.8, 8, 16);            // r
 const materialEnemigo = new THREE.MeshStandardMaterial({ color: '#4dff74' });
 const enemigo = new THREE.Mesh(formaEnemiga, materialEnemigo);
 enemigo.position.set(2, 0, -3);
+enemigo.scale.set(0, 0, 0);
 enemigo.castShadow = true;
 scene.add(enemigo);
 
